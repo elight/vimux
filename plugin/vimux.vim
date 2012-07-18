@@ -13,12 +13,15 @@ command VimuxRunLastCommand :call VimuxRunLastCommand()
 command VimuxCloseRunner :call VimuxCloseRunner()
 command VimuxClosePanes :call VimuxClosePanes()
 command VimuxCloseWindows :call VimuxCloseWindows()
-command VimuxInspectRunner :call VimuxInspectRunner()
-command VimuxScrollUpInspect :call VimuxScrollUpInspect()
-command VimuxScrollDownInspect :call VimuxScrollDownInspect()
 command VimuxInterruptRunner :call VimuxInterruptRunner()
 command VimuxPromptCommand :call VimuxPromptCommand()
 command VimuxClearRunnerHistory :call VimuxClearRunnerHistory()
+
+command VimuxInspectRunner :call VimuxInspectRunner()
+command VimuxInspectScrollUp :call VimuxInspectScrollUp()
+command VimuxInspectScrollDown :call VimuxInspectScrollDown()
+command VimuxInspectSearch :call VimuxInspectSearch()
+
 
 " DEPRECATED
 command RunLastVimTmuxCommand :call VimuxRunLastCommand()
@@ -129,16 +132,21 @@ function InterruptVimTmuxRunner()
   call VimuxInterruptRunner()
 endfunction
 
-function VimuxScrollDownInspect()
+function VimuxInspectScrollDown()
   ruby CurrentTmuxSession.new.inspect_scroll_down
 endfunction
 
-function VimuxScrollUpInspect()
+function VimuxInspectScrollUp()
   ruby CurrentTmuxSession.new.inspect_scroll_up
 endfunction
 
 function VimuxInspectRunner()
   ruby CurrentTmuxSession.new.inspect_runner
+endfunction
+
+function VimuxInspectSearch()
+  let l:command = input("Regexp Search? ")
+  ruby CurrentTmuxSession.new.inspect_search(Vim.evaluate("l:command"))
 endfunction
 
 " deprecated!
@@ -235,6 +243,14 @@ class TmuxSession
 
   def inspect_scroll_down
     inspect_send_command("C-d")
+  end
+
+  def inspect_search(regexp)
+    inspect_send_command("/")
+    t = target(:pane => runner_pane)
+    _run("select-pane -t #{t}")
+    _send_command(regexp, t, true)
+    _move_up_pane
   end
 
   def current_panes
